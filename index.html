@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Lexicon Duel</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:system-ui,sans-serif;background:#f5f5f0;min-height:100vh;display:flex;justify-content:center;padding:2rem 1rem;}
+  #root{width:100%;max-width:500px;}
+  input{width:100%;padding:10px 12px;font-size:15px;border:1.5px solid #ccc;border-radius:10px;background:#fff;color:#222;outline:none;cursor:text;}
+  input:focus{border-color:#888;}
+  button{font-family:system-ui,sans-serif;font-size:14px;padding:9px 20px;border:1.5px solid #bbb;border-radius:10px;background:#fff;color:#333;cursor:pointer;}
+  button:hover{background:#f0f0f0;}
+  button:active{transform:scale(0.97);}
+  .card{background:#fff;border:1px solid #e0e0e0;border-radius:14px;padding:14px 16px;margin-bottom:10px;}
+  .muted{color:#888;font-size:13px;}
+  .age-btn{padding:14px 10px;border-radius:14px;border:2px solid #ddd;background:#fff;cursor:pointer;text-align:center;width:100%;transition:all .15s;}
+  .age-btn:hover{border-color:#888;background:#f9f9f9;}
+  .age-btn.selected{border-color:#4a7fe5;background:#eef3fd;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef}=React;
+
+const QUESTIONS={
+  "4-6":[
+    {q:"What color is the sky on a sunny day?",a:"Blue",choices:["Green","Blue","Pink","Yellow"],letter:"S",diff:"easy",pts:1},
+    {q:"How many legs does a dog have?",a:"Four",choices:["Two","Three","Four","Six"],letter:"F",diff:"easy",pts:1},
+    {q:"What sound does a cow make?",a:"Moo",choices:["Oink","Moo","Baa","Woof"],letter:"M",diff:"easy",pts:1},
+    {q:"What do we use to write on paper?",a:"Pencil",choices:["Spoon","Pencil","Fork","Brush"],letter:"P",diff:"easy",pts:1},
+    {q:"What shape is a ball?",a:"Round",choices:["Square","Round","Triangle","Flat"],letter:"R",diff:"easy",pts:1},
+    {q:"How many fingers do we have on one hand?",a:"Five",choices:["Three","Four","Five","Six"],letter:"V",diff:"easy",pts:1},
+    {q:"What do fish live in?",a:"Water",choices:["Sand","Water","Trees","Grass"],letter:"W",diff:"easy",pts:1},
+    {q:"What color is a banana?",a:"Yellow",choices:["Red","Blue","Yellow","Green"],letter:"Y",diff:"easy",pts:1},
+    {q:"What do we drink when we are thirsty?",a:"Water",choices:["Juice","Milk","Water","Soup"],letter:"A",diff:"easy",pts:1},
+    {q:"What animal says woof?",a:"Dog",choices:["Cat","Dog","Bird","Fish"],letter:"D",diff:"easy",pts:1},
+    {q:"What do we wear on our feet?",a:"Shoes",choices:["Hats","Shoes","Gloves","Scarves"],letter:"H",diff:"easy",pts:1},
+    {q:"What color is grass?",a:"Green",choices:["Blue","Green","Red","Orange"],letter:"G",diff:"easy",pts:1},
+    {q:"How many eyes do we have?",a:"Two",choices:["One","Two","Three","Four"],letter:"T",diff:"easy",pts:1},
+    {q:"What do caterpillars turn into?",a:"Butterflies",choices:["Bees","Butterflies","Birds","Frogs"],letter:"B",diff:"easy",pts:1},
+    {q:"What meal do we eat in the morning?",a:"Breakfast",choices:["Lunch","Dinner","Breakfast","Supper"],letter:"E",diff:"easy",pts:1},
+    {q:"What is 1 + 1?",a:"2",choices:["1","2","3","4"],letter:"N",diff:"easy",pts:1},
+    {q:"Which animal has a long neck?",a:"Giraffe",choices:["Elephant","Giraffe","Lion","Zebra"],letter:"I",diff:"medium",pts:2},
+    {q:"What do bees make?",a:"Honey",choices:["Milk","Honey","Jam","Butter"],letter:"O",diff:"medium",pts:2},
+    {q:"How many wheels does a tricycle have?",a:"Three",choices:["Two","Three","Four","Five"],letter:"C",diff:"medium",pts:2},
+    {q:"What color is a carrot?",a:"Orange",choices:["Red","Orange","Yellow","Purple"],letter:"L",diff:"medium",pts:2},
+    {q:"What do you call baby cats?",a:"Kittens",choices:["Puppies","Kittens","Cubs","Chicks"],letter:"K",diff:"medium",pts:2},
+    {q:"What falls from the sky when it rains?",a:"Water drops",choices:["Snow","Water drops","Leaves","Dust"],letter:"U",diff:"medium",pts:2},
+    {q:"Where do birds live?",a:"Nests",choices:["Caves","Dens","Nests","Holes"],letter:"Q",diff:"medium",pts:2},
+    {q:"What is 2 + 2?",a:"4",choices:["3","4","5","6"],letter:"X",diff:"medium",pts:2},
+    {q:"What animal gives us milk?",a:"Cow",choices:["Pig","Cow","Sheep","Hen"],letter:"J",diff:"medium",pts:2},
+    {q:"What color is a ripe strawberry?",a:"Red",choices:["Pink","Red","Purple","Orange"],letter:"Z",diff:"medium",pts:2},
+    {q:"How many legs does an insect have?",a:"Six",choices:["Four","Six","Eight","Ten"],letter:"W",diff:"hard",pts:3},
+    {q:"What do we call the water that falls from clouds?",a:"Rain",choices:["Dew","Mist","Rain","Fog"],letter:"I",diff:"hard",pts:3},
+    {q:"What is the opposite of hot?",a:"Cold",choices:["Warm","Cool","Cold","Icy"],letter:"C",diff:"hard",pts:3},
+    {q:"Which fruit is red and grows on trees?",a:"Apple",choices:["Mango","Grape","Apple","Berry"],letter:"A",diff:"hard",pts:3},
+    {q:"How many days are in a week?",a:"Seven",choices:["Five","Six","Seven","Eight"],letter:"V",diff:"hard",pts:3},
+    {q:"What do plants need to grow?",a:"Sunlight and water",choices:["Salt and sugar","Sunlight and water","Sand and wind","Ice and snow"],letter:"S",diff:"hard",pts:3},
+    {q:"What number comes after 9?",a:"10",choices:["8","9","10","11"],letter:"T",diff:"hard",pts:3},
+    {q:"What animal is the king of the jungle?",a:"Lion",choices:["Tiger","Elephant","Lion","Gorilla"],letter:"L",diff:"hard",pts:3},
+    {q:"What is the biggest land animal?",a:"Elephant",choices:["Rhinoceros","Hippopotamus","Elephant","Giraffe"],letter:"E",diff:"hard",pts:3},
+    {q:"What do we breathe?",a:"Air",choices:["Water","Air","Steam","Smoke"],letter:"R",diff:"hard",pts:3},
+    {q:"How many months are in a year?",a:"Twelve",choices:["Ten","Eleven","Twelve","Thirteen"],letter:"W",diff:"hard",pts:3},
+    {q:"What is a baby dog called?",a:"Puppy",choices:["Kitten","Cub","Puppy","Foal"],letter:"P",diff:"hard",pts:3},
+    {q:"What color are clouds?",a:"White",choices:["Gray","White","Blue","Silver"],letter:"H",diff:"hard",pts:3},
+    {q:"What do we use to cut food?",a:"Knife",choices:["Spoon","Fork","Knife","Stick"],letter:"N",diff:"hard",pts:3},
+    {q:"Where does the sun go at night?",a:"Below the horizon",choices:["Into the sea","Into a cave","Below the horizon","Behind the moon"],letter:"B",diff:"hard",pts:3},
+    {q:"What comes after Monday?",a:"Tuesday",choices:["Sunday","Wednesday","Tuesday","Thursday"],letter:"U",diff:"hard",pts:3},
+    {q:"What is 3 + 2?",a:"5",choices:["4","5","6","7"],letter:"F",diff:"hard",pts:3},
+    {q:"What color is the sun?",a:"Yellow",choices:["Orange","White","Yellow","Gold"],letter:"Y",diff:"hard",pts:3},
+    {q:"What do frogs do in water?",a:"Swim",choices:["Fly","Swim","Dig","Run"],letter:"I",diff:"hard",pts:3},
+    {q:"How many sides does a triangle have?",a:"Three",choices:["Two","Three","Four","Five"],letter:"G",diff:"hard",pts:3},
+    {q:"What is a baby chicken called?",a:"Chick",choices:["Duckling","Chick","Foal","Lamb"],letter:"C",diff:"hard",pts:3},
+    {q:"Which body part do we use to smell?",a:"Nose",choices:["Ear","Eye","Nose","Mouth"],letter:"O",diff:"hard",pts:3},
+    {q:"What do we use to see?",a:"Eyes",choices:["Ears","Eyes","Hands","Nose"],letter:"E",diff:"hard",pts:3},
+    {q:"What season has snow?",a:"Winter",choices:["Spring","Summer","Autumn","Winter"],letter:"W",diff:"hard",pts:3},
+  ],
+  "7-8":[
+    {q:"What color is the sky on a sunny day?",a:"Blue",choices:["Green","Blue","Pink","Yellow"],letter:"S",diff:"easy",pts:1},
+    {q:"How many legs does a spider have?",a:"Eight",choices:["Six","Eight","Ten","Four"],letter:"E",diff:"easy",pts:1},
+    {q:"What is 5 + 7?",a:"12",choices:["11","12","13","14"],letter:"T",diff:"easy",pts:1},
+    {q:"Which animal is known as man's best friend?",a:"Dog",choices:["Cat","Dog","Rabbit","Hamster"],letter:"D",diff:"easy",pts:1},
+    {q:"How many days are in a week?",a:"Seven",choices:["Five","Six","Seven","Eight"],letter:"A",diff:"easy",pts:1},
+    {q:"What do bees make?",a:"Honey",choices:["Milk","Honey","Jam","Butter"],letter:"H",diff:"easy",pts:1},
+    {q:"What is the color of a flamingo?",a:"Pink",choices:["Red","Orange","Pink","White"],letter:"P",diff:"easy",pts:1},
+    {q:"Which season comes after winter?",a:"Spring",choices:["Summer","Autumn","Spring","Winter"],letter:"N",diff:"easy",pts:1},
+    {q:"What shape has four equal sides?",a:"Square",choices:["Circle","Triangle","Rectangle","Square"],letter:"Q",diff:"easy",pts:1},
+    {q:"What do caterpillars turn into?",a:"Butterflies",choices:["Bees","Butterflies","Moths","Dragonflies"],letter:"B",diff:"easy",pts:1},
+    {q:"How many months are in a year?",a:"Twelve",choices:["Ten","Eleven","Twelve","Thirteen"],letter:"L",diff:"easy",pts:1},
+    {q:"What is 9 - 4?",a:"5",choices:["3","4","5","6"],letter:"F",diff:"easy",pts:1},
+    {q:"What color is a ripe tomato?",a:"Red",choices:["Yellow","Red","Orange","Purple"],letter:"R",diff:"easy",pts:1},
+    {q:"How many sides does a rectangle have?",a:"Four",choices:["Three","Four","Five","Six"],letter:"U",diff:"easy",pts:1},
+    {q:"What is the capital of the USA?",a:"Washington D.C.",choices:["New York","Los Angeles","Washington D.C.","Chicago"],letter:"W",diff:"easy",pts:1},
+    {q:"What do we call a baby dog?",a:"Puppy",choices:["Kitten","Puppy","Cub","Foal"],letter:"Y",diff:"easy",pts:1},
+    {q:"Which planet do we live on?",a:"Earth",choices:["Mars","Earth","Venus","Jupiter"],letter:"I",diff:"medium",pts:2},
+    {q:"What is the biggest animal in the ocean?",a:"Blue whale",choices:["Great white shark","Blue whale","Dolphin","Giant squid"],letter:"W",diff:"medium",pts:2},
+    {q:"What country has the most natural lakes?",a:"Canada",choices:["Russia","USA","Canada","Finland"],letter:"C",diff:"medium",pts:2},
+    {q:"What is 6 x 7?",a:"42",choices:["36","40","42","48"],letter:"X",diff:"medium",pts:2},
+    {q:"Which animal can change its color?",a:"Chameleon",choices:["Lizard","Chameleon","Gecko","Iguana"],letter:"G",diff:"medium",pts:2},
+    {q:"How many continents are there?",a:"Seven",choices:["Five","Six","Seven","Eight"],letter:"O",diff:"medium",pts:2},
+    {q:"What is the fastest land animal?",a:"Cheetah",choices:["Lion","Horse","Cheetah","Ostrich"],letter:"H",diff:"medium",pts:2},
+    {q:"Which is the longest river in the world?",a:"Nile",choices:["Amazon","Nile","Yangtze","Mississippi"],letter:"N",diff:"medium",pts:2},
+    {q:"What gas do plants take in?",a:"Carbon dioxide",choices:["Oxygen","Nitrogen","Carbon dioxide","Hydrogen"],letter:"K",diff:"medium",pts:2},
+    {q:"How many bones are in the adult human body?",a:"206",choices:["196","206","216","226"],letter:"J",diff:"medium",pts:2},
+    {q:"What is the largest continent?",a:"Asia",choices:["Africa","Asia","Europe","Americas"],letter:"A",diff:"medium",pts:2},
+    {q:"Which ocean is the largest?",a:"Pacific",choices:["Atlantic","Indian","Arctic","Pacific"],letter:"Z",diff:"medium",pts:2},
+    {q:"What do plants need to make their own food?",a:"Sunlight",choices:["Wind","Moonlight","Sunlight","Rain"],letter:"V",diff:"medium",pts:2},
+    {q:"What is 8 x 8?",a:"64",choices:["56","60","64","72"],letter:"L",diff:"medium",pts:2},
+    {q:"What is the opposite of ancient?",a:"Modern",choices:["Old","Modern","Aged","Historic"],letter:"M",diff:"medium",pts:2},
+    {q:"Which sense does the nose use?",a:"Smell",choices:["Taste","Touch","Smell","Sight"],letter:"R",diff:"medium",pts:2},
+    {q:"What is the hardest natural substance?",a:"Diamond",choices:["Quartz","Diamond","Titanium","Obsidian"],letter:"D",diff:"hard",pts:3},
+    {q:"What is the capital of France?",a:"Paris",choices:["Rome","London","Paris","Madrid"],letter:"P",diff:"hard",pts:3},
+    {q:"How many zeros are in one thousand?",a:"Three",choices:["Two","Three","Four","Five"],letter:"T",diff:"hard",pts:3},
+    {q:"Which planet is closest to the Sun?",a:"Mercury",choices:["Venus","Mercury","Mars","Jupiter"],letter:"E",diff:"hard",pts:3},
+    {q:"What is the chemical symbol for water?",a:"H2O",choices:["HO","H2O","H2O2","OH"],letter:"H",diff:"hard",pts:3},
+    {q:"How many sides does a hexagon have?",a:"Six",choices:["Five","Six","Seven","Eight"],letter:"X",diff:"hard",pts:3},
+    {q:"What is the capital of Australia?",a:"Canberra",choices:["Sydney","Melbourne","Brisbane","Canberra"],letter:"C",diff:"hard",pts:3},
+    {q:"What is 144 divided by 12?",a:"12",choices:["10","11","12","13"],letter:"Q",diff:"hard",pts:3},
+    {q:"Which animal lays the largest eggs?",a:"Ostrich",choices:["Eagle","Ostrich","Crocodile","Penguin"],letter:"O",diff:"hard",pts:3},
+    {q:"What is the powerhouse of the cell?",a:"Mitochondria",choices:["Nucleus","Mitochondria","Ribosome","Vacuole"],letter:"U",diff:"hard",pts:3},
+    {q:"What is 25% of 200?",a:"50",choices:["25","40","50","75"],letter:"B",diff:"hard",pts:3},
+    {q:"Which gas do we breathe in?",a:"Oxygen",choices:["Nitrogen","Carbon dioxide","Oxygen","Hydrogen"],letter:"Y",diff:"hard",pts:3},
+    {q:"Who wrote Romeo and Juliet?",a:"Shakespeare",choices:["Dickens","Shakespeare","Austen","Twain"],letter:"S",diff:"hard",pts:3},
+    {q:"What is the main language spoken in Brazil?",a:"Portuguese",choices:["Spanish","Portuguese","English","French"],letter:"G",diff:"hard",pts:3},
+    {q:"What does a thermometer measure?",a:"Temperature",choices:["Pressure","Weight","Temperature","Speed"],letter:"F",diff:"hard",pts:3},
+    {q:"Which planet has rings around it?",a:"Saturn",choices:["Jupiter","Saturn","Uranus","Neptune"],letter:"Z",diff:"hard",pts:3},
+    {q:"What is the square root of 81?",a:"9",choices:["7","8","9","10"],letter:"W",diff:"hard",pts:3},
+    {q:"What continent is Egypt in?",a:"Africa",choices:["Asia","Europe","Africa","Middle East"],letter:"I",diff:"hard",pts:3},
+  ],
+  "9-12":[
+    {q:"What is the chemical symbol for gold?",a:"Au",choices:["Go","Gd","Au","Ag"],letter:"A",diff:"easy",pts:1},
+    {q:"How many planets are in our solar system?",a:"Eight",choices:["Seven","Eight","Nine","Ten"],letter:"E",diff:"easy",pts:1},
+    {q:"What is the largest organ in the human body?",a:"Skin",choices:["Liver","Brain","Skin","Heart"],letter:"S",diff:"easy",pts:1},
+    {q:"What is 12 x 12?",a:"144",choices:["124","132","144","156"],letter:"T",diff:"easy",pts:1},
+    {q:"Which country is the largest by area?",a:"Russia",choices:["USA","China","Russia","Canada"],letter:"R",diff:"easy",pts:1},
+    {q:"What is the speed of light rounded to km/s?",a:"300,000",choices:["30,000","300,000","3,000,000","186,000"],letter:"L",diff:"easy",pts:1},
+    {q:"What element has atomic number 1?",a:"Hydrogen",choices:["Helium","Hydrogen","Lithium","Carbon"],letter:"H",diff:"easy",pts:1},
+    {q:"What is the capital of Japan?",a:"Tokyo",choices:["Osaka","Kyoto","Tokyo","Hiroshima"],letter:"Y",diff:"easy",pts:1},
+    {q:"Who painted the Mona Lisa?",a:"Leonardo da Vinci",choices:["Michelangelo","Raphael","Leonardo da Vinci","Picasso"],letter:"D",diff:"easy",pts:1},
+    {q:"What is the longest bone in the human body?",a:"Femur",choices:["Tibia","Femur","Humerus","Fibula"],letter:"F",diff:"easy",pts:1},
+    {q:"What is 15% of 300?",a:"45",choices:["30","40","45","60"],letter:"N",diff:"easy",pts:1},
+    {q:"What gas makes up most of Earth's atmosphere?",a:"Nitrogen",choices:["Oxygen","Nitrogen","Carbon dioxide","Argon"],letter:"G",diff:"easy",pts:1},
+    {q:"Which ocean is the deepest?",a:"Pacific",choices:["Atlantic","Indian","Arctic","Pacific"],letter:"P",diff:"easy",pts:1},
+    {q:"What is the powerhouse of the cell?",a:"Mitochondria",choices:["Nucleus","Mitochondria","Ribosome","Vacuole"],letter:"M",diff:"easy",pts:1},
+    {q:"What year did World War II end?",a:"1945",choices:["1943","1944","1945","1946"],letter:"W",diff:"easy",pts:1},
+    {q:"What is the Pythagorean theorem?",a:"a² + b² = c²",choices:["a + b = c","a² - b² = c²","a² + b² = c²","a x b = c²"],letter:"I",diff:"easy",pts:1},
+    {q:"What is the largest planet in our solar system?",a:"Jupiter",choices:["Saturn","Jupiter","Uranus","Neptune"],letter:"J",diff:"medium",pts:2},
+    {q:"What language has the most native speakers?",a:"Mandarin",choices:["English","Spanish","Hindi","Mandarin"],letter:"C",diff:"medium",pts:2},
+    {q:"What is the only metal liquid at room temperature?",a:"Mercury",choices:["Gallium","Mercury","Cesium","Bromine"],letter:"O",diff:"medium",pts:2},
+    {q:"Who developed the theory of relativity?",a:"Einstein",choices:["Newton","Einstein","Bohr","Curie"],letter:"U",diff:"medium",pts:2},
+    {q:"What is the main component of the Sun?",a:"Hydrogen",choices:["Helium","Hydrogen","Carbon","Oxygen"],letter:"X",diff:"medium",pts:2},
+    {q:"What is the square root of 144?",a:"12",choices:["10","11","12","13"],letter:"Q",diff:"medium",pts:2},
+    {q:"How many chromosomes do humans have?",a:"46",choices:["23","44","46","48"],letter:"K",diff:"medium",pts:2},
+    {q:"What is the capital of Brazil?",a:"Brasília",choices:["Rio de Janeiro","São Paulo","Brasília","Salvador"],letter:"B",diff:"medium",pts:2},
+    {q:"Who wrote 'Harry Potter'?",a:"J.K. Rowling",choices:["J.R.R. Tolkien","J.K. Rowling","C.S. Lewis","Roald Dahl"],letter:"V",diff:"medium",pts:2},
+    {q:"What is the chemical formula for table salt?",a:"NaCl",choices:["NaCl","KCl","NaF","CaCl2"],letter:"Z",diff:"medium",pts:2},
+    {q:"How many sides does an octagon have?",a:"Eight",choices:["Six","Seven","Eight","Nine"],letter:"G",diff:"medium",pts:2},
+    {q:"In what year did humans first land on the Moon?",a:"1969",choices:["1965","1967","1969","1972"],letter:"N",diff:"medium",pts:2},
+    {q:"What is the smallest country in the world?",a:"Vatican City",choices:["Monaco","San Marino","Vatican City","Liechtenstein"],letter:"R",diff:"medium",pts:2},
+    {q:"What is the freezing point of water in Celsius?",a:"0°C",choices:["-5°C","0°C","4°C","10°C"],letter:"F",diff:"medium",pts:2},
+    {q:"Which blood type is the universal donor?",a:"O negative",choices:["A positive","B negative","O positive","O negative"],letter:"L",diff:"medium",pts:2},
+    {q:"What is photosynthesis?",a:"Making food from sunlight",choices:["Breathing oxygen","Making food from sunlight","Digesting food","Absorbing water"],letter:"A",diff:"medium",pts:2},
+    {q:"What is the rarest blood type?",a:"AB negative",choices:["O negative","A negative","B negative","AB negative"],letter:"W",diff:"hard",pts:3},
+    {q:"What is Newton's second law of motion?",a:"F = ma",choices:["F = mv","F = ma","F = mg","E = mc²"],letter:"E",diff:"hard",pts:3},
+    {q:"What is the chemical symbol for iron?",a:"Fe",choices:["Ir","In","Fe","Fr"],letter:"I",diff:"hard",pts:3},
+    {q:"How many bones are in the human skull?",a:"22",choices:["14","18","22","28"],letter:"H",diff:"hard",pts:3},
+    {q:"What is the deepest lake in the world?",a:"Lake Baikal",choices:["Lake Superior","Caspian Sea","Lake Baikal","Lake Tanganyika"],letter:"D",diff:"hard",pts:3},
+    {q:"What is the boiling point of water in Fahrenheit?",a:"212°F",choices:["100°F","180°F","212°F","250°F"],letter:"T",diff:"hard",pts:3},
+    {q:"Who discovered penicillin?",a:"Alexander Fleming",choices:["Louis Pasteur","Alexander Fleming","Marie Curie","Edward Jenner"],letter:"P",diff:"hard",pts:3},
+    {q:"What is the most abundant element in Earth's crust?",a:"Oxygen",choices:["Silicon","Aluminum","Iron","Oxygen"],letter:"U",diff:"hard",pts:3},
+    {q:"What is the Coriolis effect?",a:"Wind deflection due to Earth's rotation",choices:["Ocean current patterns","Wind deflection due to Earth's rotation","Tidal force of the Moon","Pressure changes in weather"],letter:"C",diff:"hard",pts:3},
+    {q:"How many valence electrons does carbon have?",a:"4",choices:["2","3","4","6"],letter:"V",diff:"hard",pts:3},
+    {q:"Which war was fought between 1950 and 1953?",a:"Korean War",choices:["Vietnam War","Korean War","Gulf War","Cold War"],letter:"K",diff:"hard",pts:3},
+    {q:"What is the name of the process by which rocks are broken down?",a:"Weathering",choices:["Erosion","Weathering","Sedimentation","Subduction"],letter:"J",diff:"hard",pts:3},
+    {q:"What is the half-life concept in physics?",a:"Time for half of radioactive atoms to decay",choices:["Time a wave takes to travel","Time for half of radioactive atoms to decay","Half the speed of light","Half the energy of a reaction"],letter:"Q",diff:"hard",pts:3},
+    {q:"What is the largest desert in the world?",a:"Antarctica",choices:["Sahara","Gobi","Arabia","Antarctica"],letter:"O",diff:"hard",pts:3},
+    {q:"What is the SI unit of electric current?",a:"Ampere",choices:["Volt","Watt","Ampere","Ohm"],letter:"M",diff:"hard",pts:3},
+    {q:"What does DNA stand for?",a:"Deoxyribonucleic acid",choices:["Deoxyribonucleic acid","Dioxyribose nucleic acid","Double nucleic acid","Deoxyribose nitrogen acid"],letter:"X",diff:"hard",pts:3},
+    {q:"Which ancient wonder was located in Alexandria?",a:"The Lighthouse",choices:["The Colossus","The Hanging Gardens","The Lighthouse","The Mausoleum"],letter:"Z",diff:"hard",pts:3},
+    {q:"What is the name of the force that keeps planets in orbit?",a:"Gravity",choices:["Magnetism","Gravity","Centrifugal force","Nuclear force"],letter:"Y",diff:"hard",pts:3},
+  ]
+};
+
+const LETTER_VALUES={Q:10,Z:10,X:8,J:8,V:4,K:4,Y:3,W:3,F:3,B:3,H:2,G:2,D:2,M:2,N:2,P:2,C:2,L:1,O:1,S:1,A:1,E:1,I:1,R:1,T:1,U:1};
+const WORDLIST=["can","man","pan","son","bin","pin","win","pen","ten","men","cat","bat","hat","mat","rat","sat","dog","fog","log","hot","lot","dot","pot","big","dig","pig","wig","bid","hid","kid","lid","box","fox","mix","fix","six","dim","him","tip","dip","hip","lip","rip","sip","zip","cop","hop","mob","cod","cab","lab","tab","had","mad","bad","dad","lad","sad","bag","lag","nag","rag","tag","cap","gap","lap","map","nap","rap","sap","tap","car","bar","far","jar","tar","war","par","face","fact","fail","fair","fame","farm","fast","fate","fear","feat","feed","feel","feet","fell","felt","file","film","find","fine","fire","firm","fish","fist","flag","flat","fled","flex","flip","flow","foam","fold","fond","food","fool","ford","form","fort","foul","four","free","fuel","full","fund","fury","fuse","gain","gale","game","gang","gate","gave","gaze","gear","germ","gift","give","glad","glee","glow","glue","goal","gold","gone","gown","grab","gray","grim","grin","grip","grow","gulf","gust","hack","hail","half","hall","halt","hand","hang","hard","harm","hate","haul","have","hawk","head","heal","heap","hear","heat","heel","helm","help","herb","herd","hero","high","hill","hint","hire","hold","hole","home","hood","hook","hope","horn","host","hour","howl","hull","hunt","hurt","keen","keep","kind","king","knew","knit","knob","knot","lack","lake","lamb","lamp","land","lane","lark","last","late","lawn","lead","leaf","leak","lean","leap","left","lend","less","lick","life","lift","like","lime","limp","line","link","lint","lion","list","live","loan","lock","loft","lone","long","look","loop","lose","loss","lost","love","lull","lump","lung","lurk","lush","lust","made","mail","main","make","male","mall","malt","mane","mare","mark","mast","mate","meal","mean","meet","meld","melt","mend","mild","mile","mill","mind","mine","mint","miss","mist","mode","mold","monk","mood","moon","moor","more","morn","most","move","much","mule","muse","must","mute","myth","nail","name","near","neat","need","nest","news","next","nice","nine","node","none","noon","norm","nose","note","pace","pack","page","paid","pain","pair","pale","palm","park","part","pass","past","path","pave","peel","peer","pelt","perk","pest","pick","pile","pill","pine","pink","pint","pipe","pity","plan","play","plea","plot","plow","plum","plus","poem","poet","pole","poll","pond","pool","poor","pore","pork","port","pose","pour","prey","prim","prod","prop","pull","pump","pure","push","race","rack","raft","rage","raid","rail","rain","rake","ramp","rank","rant","rash","rate","read","real","reap","reef","reel","rein","rely","rent","rest","rice","rich","ride","rife","rift","ring","riot","rise","risk","road","roam","roar","robe","rock","rode","role","roll","roof","root","rope","rose","rout","ruin","rule","rune","rush","rust","safe","sage","sail","sake","sale","salt","same","sand","sane","save","seal","seam","sear","seat","seed","seek","seem","shed","ship","shop","shot","show","shut","sick","side","silk","sing","sink","site","size","skid","skim","skip","slim","slip","slow","slug","soar","soft","soil","sold","sole","some","song","sore","soul","soup","span","spar","spin","spit","spot","spur","star","stay","stem","step","stop","stub","such","sung","sunk","sure","surf","swan","swap","sway","swim","tale","tall","tame","tang","tank","taut","teal","tear","tell","tent","term","thaw","them","then","thin","tide","tilt","time","toad","toil","told","toll","tomb","tome","tone","torn","tour","town","trim","trio","trip","trod","true","tube","tuft","twig","twin","type","undo","unit","upon","urge","vale","vane","vast","veil","vein","vine","void","wade","wait","wake","walk","wall","wand","want","ward","warm","warn","warp","wash","wave","weak","wean","weed","weld","well","went","were","west","whim","wick","wide","will","wisp","woke","wolf","womb","wood","wool","word","wore","work","worm","worn","wrap","wren","yard","yawn","year","yell","zeal","zest","zone","zoom","blend","brand","brave","break","bread","bride","bring","broad","broke","build","bunch","burst","candy","carry","catch","chain","chair","chaos","charm","chase","cheap","check","cheer","chess","chief","child","claim","clash","class","clean","clear","click","cliff","climb","cling","clock","close","cloth","cloud","clown","coral","count","court","cover","crack","craft","crane","crash","crawl","crazy","cream","creek","crisp","cross","crowd","crown","cruel","crush","curve","cycle","daily","dance","death","delta","dense","depth","dozen","draft","drain","drama","drape","dream","dress","drift","drink","drive","drove","drunk","dwarf","dwell","eagle","early","earth","eight","elite","empty","enemy","enjoy","enter","equal","error","event","every","exact","exist","extra","fable","false","fancy","fatal","feast","fence","feral","ferry","fever","fewer","fiber","field","fifth","fifty","fight","final","first","flame","flare","flash","flask","flesh","float","flock","flood","floor","flour","flute","focus","forge","frail","frame","frank","fraud","fresh","front","frost","fruit","funny","fuzzy","genre","ghost","giant","given","gleam","glean","glide","globe","gloom","glory","glove","grace","grade","grand","grant","grape","grasp","grass","grate","graze","greed","greet","grief","grind","groan","group","grove","guard","guess","guide","guile","gusto","habit","haven","hazel","heavy","hedge","hence","herbs","heron","hitch","honey","honor","horse","hotel","hound","house","human","humid","hurry","ideal","image","imply","index","infer","inner","input","issue","ivory","judge","juice","juicy","jumbo","karma","knife","knock","label","large","laser","later","laugh","layer","learn","lease","least","legal","level","light","limbo","limit","linen","liver","local","lodge","lofty","logic","loose","lower","lucky","lunar","lyric","magic","major","maker","manor","maple","march","marry","match","mayor","media","merge","merit","metal","minor","minus","mixed","model","money","month","moral","motor","mount","mouse","mouth","movie","music","naive","noble","north","novel","oasis","ocean","offer","olive","onset","opera","orbit","order","organ","other","outer","owner","oxide","ozone","paint","panic","paper","pasta","patch","pause","peace","pearl","pedal","penny","peril","petal","phase","phone","photo","piano","pilot","pixel","pizza","place","plain","plane","plant","plate","plaza","plead","pluck","plume","point","poker","polar","porch","power","press","price","pride","prime","print","prior","prize","probe","prose","proud","prove","prowl","pulse","punch","purge","queen","query","quest","quick","quiet","quite","quota","quote","radar","radio","raise","rally","ranch","range","rapid","raven","reach","rebel","reign","relax","repay","rider","ridge","risky","rivet","robin","robot","rocky","rouge","rough","round","route","rover","royal","rugby","ruler","rural","rusty","saint","salsa","sandy","sauce","savor","scalp","scare","scarf","scene","scent","scope","score","scout","scrap","screw","scrub","seize","sense","serve","seven","shame","shape","share","shark","sharp","sheep","shelf","shell","shift","shine","shirt","shock","shoot","shore","short","shout","shove","sight","silly","since","sixth","sixty","skill","skull","slash","sleet","slick","slide","slime","slope","sloth","slump","smell","smile","smirk","smoke","snack","snail","snake","snare","sneak","sneer","sniff","snore","snout","snowy","sober","solve","sorry","south","space","spade","spare","spark","spawn","speed","spell","spend","spice","spire","spite","spoke","spook","spore","sport","spout","spray","spunk","squad","squat","stack","staff","stage","stain","stair","stake","stale","stamp","stand","stark","start","stash","state","steak","steal","steam","steel","steep","steer","stern","stiff","sting","stock","stomp","stone","stood","store","storm","story","stout","stove","strap","straw","stray","strip","strut","stuck","study","stuff","stump","stung","stunk","stunt","style","sugar","suite","sunny","super","surge","swamp","swarm","swear","sweat","sweep","sweet","swift","sword","table","talon","tango","tardy","taunt","teach","tempo","tense","thank","their","there","these","thick","thing","think","third","thorn","those","three","threw","throw","thumb","tiger","tight","title","today","token","topic","total","touch","tough","toxic","trace","track","trade","trail","train","trait","trash","trend","trial","tribe","trick","tried","troll","trout","trove","truce","trunk","trust","truth","tulip","twang","twirl","twist","ultra","uncle","under","unify","union","until","upper","upset","urban","usher","usual","utter","vague","valid","valor","valve","vapor","vault","verge","verse","vigor","viral","virus","vital","vivid","vocal","voter","waken","waste","watch","water","weary","weave","wedge","weigh","weird","whale","wheat","wheel","where","which","while","white","whole","whose","wider","width","windy","witch","woman","women","world","worry","worse","worst","worth","would","wrath","write","wrote","yacht","yearn","yield","young","youth","zebra","zilch"];
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function canSpell(word,letters){const av=[...letters.map(l=>l.toLowerCase())];for(const c of word.toLowerCase()){const i=av.indexOf(c);if(i===-1)return false;av.splice(i,1);}return true;}
+function scoreWord(w){return w.toUpperCase().split("").reduce((s,c)=>s+(LETTER_VALUES[c]||1),0);}
+function isValid(w){return w.length>=3&&WORDLIST.includes(w.toLowerCase());}
+function fmtTime(s){return`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;}
+
+const DIFF_COLOR={easy:"#1D9E75",medium:"#BA7517",hard:"#D85A30"};
+const LABELS=["A","B","C","D"];
+const ROUND_TOTAL=6;
+const AGE_GROUPS=[{id:"4-6",label:"Ages 4–6",emoji:"🌱",desc:"Simple & fun"},{id:"7-8",label:"Ages 7–8",emoji:"🌟",desc:"Getting clever"},{id:"9-12",label:"Ages 9–12",emoji:"🚀",desc:"Challenge mode"}];
+
+const CHEERS=n=>[`Woohoo, ${n}! That's correct! Amazing job!`,`Yes! Great answer, ${n}! You're so smart!`,`Fantastic, ${n}! You got it right!`,`Awesome, ${n}! You're on fire!`,`Brilliant, ${n}! Keep it up!`];
+const ENCOUR=n=>[`That's okay, ${n}! You'll get the next one!`,`Don't give up, ${n}! You're doing great!`,`Keep trying, ${n}! Every mistake helps you learn!`,`Almost, ${n}! You're getting smarter every round!`,`No worries, ${n}! The next question is yours!`];
+
+function speak(text){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=0.95;u.pitch=1.2;window.speechSynthesis.speak(u);}
+
+function App(){
+  const [phase,setPhase]=useState("start");
+  const [nameInput,setNameInput]=useState("");
+  const [playerName,setPlayerName]=useState("");
+  const [ageGroup,setAgeGroup]=useState("");
+  const [questions,setQuestions]=useState([]);
+  const [roundIdx,setRoundIdx]=useState(0);
+  const [letters,setLetters]=useState([]);
+  const [triviaPts,setTriviaPts]=useState(0);
+  const [selected,setSelected]=useState(null);
+  const [answered,setAnswered]=useState(false);
+  const [feedbackMsg,setFeedbackMsg]=useState("");
+  const [timer,setTimer]=useState(180);
+  const [wordInput,setWordInput]=useState("");
+  const [wordMsg,setWordMsg]=useState("");
+  const [wordTimer,setWordTimer]=useState(180);
+  const [finalWord,setFinalWord]=useState("");
+  const [totalScore,setTotalScore]=useState(0);
+  const timerRef=useRef(null);
+  const current=questions[roundIdx]||null;
+
+  const startGame=()=>{
+    if(!ageGroup){alert("Please select an age group!");return;}
+    const name=nameInput.trim()||"Player";
+    setPlayerName(name);
+    const q=shuffle(QUESTIONS[ageGroup]).slice(0,ROUND_TOTAL);
+    setQuestions(q);
+    setRoundIdx(0);setLetters([]);setTriviaPts(0);
+    setSelected(null);setAnswered(false);setFeedbackMsg("");
+    setTimer(180);setFinalWord("");setWordInput("");setWordMsg("");
+    speak(`Let's go, ${name}! Good luck!`);
+    setPhase("answer");
+  };
+
+  const exitGame=()=>{
+    clearInterval(timerRef.current);
+    window.speechSynthesis.cancel();
+    setPhase("start");setNameInput("");setPlayerName("");setAgeGroup("");
+  };
+
+  useEffect(()=>{
+    if(phase!=="answer")return;
+    clearInterval(timerRef.current);
+    timerRef.current=setInterval(()=>{
+      setTimer(t=>{if(t<=1){clearInterval(timerRef.current);setAnswered(true);return 0;}return t-1;});
+    },1000);
+    return()=>clearInterval(timerRef.current);
+  },[phase,roundIdx]);
+
+  useEffect(()=>{
+    if(phase!=="wordTime")return;
+    clearInterval(timerRef.current);
+    timerRef.current=setInterval(()=>{
+      setWordTimer(t=>{if(t<=1){clearInterval(timerRef.current);endGame("");return 0;}return t-1;});
+    },1000);
+    return()=>clearInterval(timerRef.current);
+  },[phase]);
+
+  const selectChoice=(choice)=>{
+    if(answered)return;
+    clearInterval(timerRef.current);
+    setSelected(choice);setAnswered(true);
+    const correct=choice===current.a;
+    if(correct){setLetters(l=>[...l,current.letter]);setTriviaPts(p=>p+current.pts);}
+    const msgs=correct?CHEERS(playerName):ENCOUR(playerName);
+    const msg=msgs[Math.floor(Math.random()*msgs.length)];
+    setFeedbackMsg(msg);speak(msg);
+  };
+
+  const nextRound=()=>{
+    const next=roundIdx+1;
+    setFeedbackMsg("");
+    if(next>=ROUND_TOTAL){setPhase("wordTime");setWordTimer(180);}
+    else{setRoundIdx(next);setSelected(null);setAnswered(false);setTimer(180);}
+  };
+
+  const submitWord=()=>{
+    const w=wordInput.trim();
+    if(w.length<3){setWordMsg("Word must be at least 3 letters.");return;}
+    if(!canSpell(w,letters)){setWordMsg("You don't have all those letters!");return;}
+    if(!isValid(w)){setWordMsg("Not a recognized word. Try another!");return;}
+    clearInterval(timerRef.current);endGame(w);
+  };
+
+  const endGame=(w)=>{
+    clearInterval(timerRef.current);
+    const ws=w?scoreWord(w):0;
+    setFinalWord(w);setTotalScore(triviaPts+ws);
+    if(w)speak(`Amazing, ${playerName}! Your word is ${w}!`);
+    setPhase("result");
+  };
+
+  // ── Start ──
+  if(phase==="start") return(
+    <div style={{paddingTop:"1.5rem"}}>
+      <div style={{textAlign:"center",marginBottom:20}}>
+        <div style={{fontSize:40,marginBottom:6}}>🧠</div>
+        <h1 style={{fontSize:24,fontWeight:700,color:"#222",marginBottom:6}}>Lexicon Duel</h1>
+        <p style={{fontSize:14,color:"#666",lineHeight:1.6}}>Answer trivia to earn letters, then build the highest-scoring word!</p>
+      </div>
+
+      <div style={{marginBottom:16}}>
+        <label style={{fontSize:14,color:"#555",display:"block",marginBottom:6}}>What's your name?</label>
+        <input value={nameInput} onChange={e=>setNameInput(e.target.value)}
+          onKeyDown={e=>e.key==="Enter"&&startGame()} placeholder="Enter your name…"/>
+      </div>
+
+      <div style={{marginBottom:20}}>
+        <label style={{fontSize:14,color:"#555",display:"block",marginBottom:8}}>Select your age group:</label>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+          {AGE_GROUPS.map(g=>(
+            <button key={g.id} className={`age-btn${ageGroup===g.id?" selected":""}`}
+              onClick={()=>setAgeGroup(g.id)}>
+              <div style={{fontSize:24,marginBottom:4}}>{g.emoji}</div>
+              <div style={{fontSize:13,fontWeight:600,color:"#222"}}>{g.label}</div>
+              <div style={{fontSize:11,color:"#888",marginTop:2}}>{g.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button onClick={startGame} style={{width:"100%",fontSize:15,padding:"12px",background:ageGroup?"#4a7fe5":"#ccc",color:"#fff",border:"none",borderRadius:12}}>
+        Start game 🚀
+      </button>
+    </div>
+  );
+
+  // ── Answer ──
+  if(phase==="answer"&&current) return(
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+        <span className="muted">Round {roundIdx+1}/{ROUND_TOTAL} · <span style={{color:DIFF_COLOR[current.diff],fontWeight:600,textTransform:"capitalize"}}>{current.diff}</span> · earn <strong>{current.letter}</strong></span>
+        <div style={{display:"flex",gap:10,alignItems:"center"}}>
+          <span style={{fontSize:13,fontWeight:600,color:timer<=10?"#D85A30":"#888"}}>{fmtTime(timer)}</span>
+          <button onClick={exitGame} style={{fontSize:12,padding:"4px 10px",color:"#888"}}>✕ Exit</button>
+        </div>
+      </div>
+      <div style={{fontSize:17,fontWeight:600,color:"#222",marginBottom:18,lineHeight:1.5}}>{current.q}</div>
+      {current.choices.map((choice,i)=>{
+        let bg="#fff",border="1px solid #ddd",op=1;
+        if(answered){
+          if(choice===current.a){bg="#e6f9f2";border="1px solid #1D9E75";}
+          else if(choice===selected){bg="#fdecea";border="1px solid #D85A30";}
+          else op=0.4;
+        }
+        return(
+          <div key={i} onClick={()=>selectChoice(choice)}
+            style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",marginBottom:8,borderRadius:12,border,background:bg,opacity:op,cursor:answered?"default":"pointer"}}>
+            <span style={{minWidth:28,height:28,borderRadius:"50%",background:"#f0f0f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:600,color:"#555",flexShrink:0}}>{LABELS[i]}</span>
+            <span style={{fontSize:15,color:"#222"}}>{choice}</span>
+          </div>
+        );
+      })}
+      {answered&&(
+        <div style={{marginTop:16,textAlign:"center"}}>
+          <div style={{fontSize:15,fontWeight:600,marginBottom:14,color:selected===current.a?"#1D9E75":"#D85A30"}}>{feedbackMsg}</div>
+          <button onClick={nextRound} style={{fontSize:14,padding:"10px 24px"}}>
+            {roundIdx+1<ROUND_TOTAL?"Next round ›":"See results ›"}
+          </button>
+        </div>
+      )}
+      {letters.length>0&&(
+        <div style={{marginTop:20,padding:"10px 14px",background:"#f5f5f0",borderRadius:10}}>
+          <div className="muted" style={{marginBottom:6}}>Your letters</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+            {letters.map((l,i)=><span key={i} style={{background:"#fff",border:"1px solid #ddd",borderRadius:8,padding:"4px 10px",fontWeight:600,fontSize:15}}>{l}</span>)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // ── Word building ──
+  if(phase==="wordTime") return(
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <h3 style={{fontSize:16,fontWeight:600,color:"#222"}}>Build your word!</h3>
+        <span style={{fontSize:13,fontWeight:600,color:wordTimer<=30?"#D85A30":"#888"}}>{fmtTime(wordTimer)}</span>
+      </div>
+      <p className="muted" style={{marginBottom:14}}>Spell the highest-scoring word using your collected letters.</p>
+      <div style={{padding:"12px 14px",background:"#f5f5f0",borderRadius:10,marginBottom:14}}>
+        <div className="muted" style={{marginBottom:6}}>Your letters · trivia pts: {triviaPts}</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+          {letters.length===0
+            ?<span style={{fontSize:13,color:"#aaa"}}>No letters collected</span>
+            :letters.map((l,i)=><span key={i} style={{background:"#fff",border:"1px solid #ddd",borderRadius:8,padding:"4px 10px",fontWeight:600,fontSize:15}}>{l} <span style={{fontSize:10,color:"#888"}}>+{LETTER_VALUES[l]||1}</span></span>)
+          }
+        </div>
+      </div>
+      <div style={{display:"flex",gap:8,marginBottom:8}}>
+        <input value={wordInput} onChange={e=>{setWordInput(e.target.value);setWordMsg("");}}
+          onKeyDown={e=>e.key==="Enter"&&submitWord()} placeholder="Type a word…" style={{flex:1}}/>
+        <button onClick={submitWord} style={{padding:"8px 16px"}}>Submit</button>
+      </div>
+      {wordMsg&&<div style={{fontSize:13,color:"#D85A30",marginBottom:8}}>{wordMsg}</div>}
+      <button onClick={()=>endGame("")} style={{fontSize:13,color:"#888",background:"none",border:"none",cursor:"pointer",padding:0,marginTop:4}}>Skip →</button>
+    </div>
+  );
+
+  // ── Result ──
+  if(phase==="result"){
+    const ws=finalWord?scoreWord(finalWord):0;
+    const total=triviaPts+ws;
+    const verdict=total>=20?"Master Lexicologist! 🏆":total>=12?"Sharp mind! 🌟":total>=6?"Solid round! 👍":"Good effort! 💪";
+    return(
+      <div style={{textAlign:"center",paddingTop:"1rem"}}>
+        <div style={{fontSize:36,marginBottom:6}}>✨</div>
+        <h2 style={{fontSize:20,fontWeight:700,marginBottom:4,color:"#222"}}>{playerName}, {verdict}</h2>
+        <p className="muted" style={{marginBottom:20}}>Here's how you did:</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:20}}>
+          {[["Trivia pts",triviaPts],["Word score",ws],["Total",total]].map(([l,v])=>(
+            <div key={l} style={{background:"#f5f5f0",borderRadius:10,padding:"14px 8px"}}>
+              <div className="muted" style={{marginBottom:4}}>{l}</div>
+              <div style={{fontSize:26,fontWeight:700,color:"#222"}}>{v}</div>
+            </div>
+          ))}
+        </div>
+        {finalWord&&(
+          <div className="card" style={{marginBottom:20}}>
+            <div className="muted" style={{marginBottom:4}}>Your word</div>
+            <div style={{fontSize:24,fontWeight:700,letterSpacing:3,color:"#222"}}>{finalWord.toUpperCase()}</div>
+          </div>
+        )}
+        <button onClick={()=>setPhase("start")} style={{fontSize:15,padding:"10px 30px"}}>Play again 🔄</button>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
